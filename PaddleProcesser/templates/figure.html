@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Figure</title>
+</head>
+<style>
+    .result{
+        border : 1px solid #ddd;
+        margin : 15px;
+        display : inline-block;
+        font-size : 10px;
+    };
+</style>
+<body>
+    <h2>
+        <p style="text-align:center" font size="1">Clinical Figure Classification</p>
+    </h2>
+    <div>
+        <p style="text-align:center">
+            Please select a language:
+            <input type="radio" id="English" name="lang" checked>
+            <label for="English">English</label>
+
+            <input type="radio" id="Chinese" name="lang">
+            <label for="Chinese">Chinese</label>
+        </p>
+    </div><br/>
+    <div>
+        <p style="text-align:center">
+            Please select a figure:</br>
+            <img src="" id="figure" style="height:200px"> <input type="file" id="file"><br />
+        </p>
+    </div>
+    <center>
+        <input type="button" id="submit" value="Submit" /><br/>
+        <div id="result" class="result"></div><br/>
+    </center>
+    <script src="https://libs.baidu.com/jquery/1.9.0/jquery.js"></script>
+    <script>
+        $.ajaxSetup({
+            data : {csrfmiddlewaretoken : '{{ csrf_token }}'}
+        })
+    </script>
+    <script>
+        function read(){
+            $('#result').html('Waiting for extraction result...');
+            var figuredata = new FormData();
+            figuredata.append('figure', $('#file')[0].files[0]);
+            figuredata.append('lang', $('input:radio:checked').attr('id'));
+            $.ajax({
+                url : '/figure/read/',
+                type : 'POST',
+                dataType : 'text',
+                data : figuredata,
+                cache : false,
+                processData : false,
+                contentType : false,
+                success : function(data){
+                    data = JSON.parse(data);
+                    head = data.head;
+                    body = data.body;
+                    table = "<center><p>Extracted sequences are:</p><br/><table border='1px solid #ccc' style='text-algin: center'><thead><tr>";
+                    $.each(head, function(i, item){
+                        table = table + "<td>" + item + "</td>";
+                    });
+                    table = table + "</tr></thead><tbody>";
+
+                    $.each(body, function(i, item){
+                        table = table + "<tr>";
+                        $.each(item, function(key, value){
+                            table = table + "<td>" + JSON.stringify(value) + "</td>";
+                        });
+                        table = table + "</tr>"
+                    });
+                    table = table + "</tbody></table></center>"
+                    $('#result').html(table);
+                },
+            });
+        };
+        $("#file").change(function(){
+            $("#figure").attr("src", URL.createObjectURL($(this)[0].files[0]));
+        });
+        $('#submit').click(function(){
+            read();
+        });
+    </script>
+</body>
+</html>
